@@ -16,7 +16,7 @@ GameObject:
   - component: {fileID: 3051582336983108831}
   m_Layer: 0
   m_Name: Player
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -49,9 +49,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 87b3446fb6b4b78448c12de98ee1eaa9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  syncDirection: 0
+  syncMode: 0
+  syncInterval: 0
   _lookingDirection: {fileID: 3051582337795606051}
   _characterModelTransform: {fileID: 3051582337915880588}
-  _movementCollider: {fileID: 3051582337915880625}
   _playerMovementSettings: {fileID: 11400000, guid: 6cba4e5f38320924998a8cbdb2e0cbfd, type: 2}
   _animator: {fileID: 3051582336983108831}
 --- !u!114 &3051582336983108825
@@ -69,7 +71,7 @@ MonoBehaviour:
   sceneId: 0
   _assetId: 3958487649
   serverOnly: 0
-  visible: 2
+  visible: 0
   hasSpawned: 0
 --- !u!114 &3051582336983108826
 MonoBehaviour:
@@ -85,7 +87,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   syncDirection: 1
   syncMode: 0
-  syncInterval: 0
+  syncInterval: 0.01
   target: {fileID: 3051582336983108827}
   clientAuthority: 1
   syncVelocity: 1

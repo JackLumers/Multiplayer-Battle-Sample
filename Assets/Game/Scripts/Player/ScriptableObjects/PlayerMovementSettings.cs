@@ -25,6 +25,8 @@ namespace Game.Scripts.Player.ScriptableObjects
         public float MaxMoveSpeed;
         
         [Header("Dash")]
+        // TODO: Change to distance
         public float DashSpeed;
+        public int DashCooldownMillis;
     }
 }

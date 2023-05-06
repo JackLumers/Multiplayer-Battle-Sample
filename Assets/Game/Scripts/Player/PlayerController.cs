@@ -1,16 +1,17 @@
+using Game.Scripts.Globals;
 using Game.Scripts.Player.Input;
 using Game.Scripts.Player.ScriptableObjects;
+using Mirror;
 using UnityEngine;
 
 namespace Game.Scripts.Player
 {
     [RequireComponent(typeof(Rigidbody))]
-    public class PlayerController : MonoBehaviour
+    public class PlayerController : NetworkBehaviour
     {
         [Header("PhysicsCharacter Fields")] 
         [SerializeField] private Transform _lookingDirection;
         [SerializeField] private Transform _characterModelTransform;
-        [SerializeField] private Collider _movementCollider;
         [SerializeField] private PlayerMovementSettings _playerMovementSettings;
         [SerializeField] private Animator _animator;
 
@@ -20,29 +21,41 @@ namespace Game.Scripts.Player
         private PlayerMovingController _playerMovingController;
         private PlayerAnimationController _playerAnimationController;
         private PlayerInputController _playerInputController;
-
+        private DashAbility _dashAbility;
+        
         public Vector3 PlayerLookingDirection => _lookingDirection.position - _characterModelTransform.position;
 
-        protected void Awake()
+        protected void Start()
         {
             _rigidbody = GetComponent<Rigidbody>();
 
             _runtimeMovementSettingsData = _playerMovementSettings.MovementSettingsData;
-            _playerMovingController = new PlayerMovingController(_rigidbody, _movementCollider);
+            
+            _playerMovingController = new PlayerMovingController(_rigidbody);
 
             _playerAnimationController = new PlayerAnimationController(_animator);
 
-            _playerInputController = new PlayerInputController(this);
+            // Preventing input from local player to remote players
+            if(isLocalPlayer) 
+                _playerInputController = new PlayerInputController(this);
+
+            _dashAbility = new DashAbility(true, this, 
+                _playerMovingController, _playerAnimationController);
         }
 
         private void OnDestroy()
         {
             _playerInputController?.Dispose();
+            _dashAbility?.Dispose();
         }
 
-        private void FixedUpdate()
+        [ServerCallback]
+        private void OnCollisionEnter(Collision collision)
         {
-            _playerMovingController.FixedUpdateCallback();
+            if (_dashAbility.IsPerforming && collision.gameObject.CompareTag(ProjectConstants.PlayerTag))
+            {
+                Debug.Log("Damage!");
+            }
         }
 
         public void AttemptMoveSelf(Vector3 direction)
@@ -51,7 +64,7 @@ namespace Game.Scripts.Player
             
             var b = direction.x;
             var a = direction.z;
-
+            
             var rotationY = Mathf.Asin(a / Mathf.Sqrt(Mathf.Pow(a, 2) + Mathf.Pow(b, 2))) * 57.2957795131f;
             rotationY -= 90;
             
@@ -70,17 +83,16 @@ namespace Game.Scripts.Player
             _playerAnimationController.Animate(PlayerAnimationController.AnimationKey.Move);
         }
 
-        public void Dash(Vector3 direction)
+        public async void Dash(Vector3 direction)
         {
-            // TODO: Dash distance instead of speed
-            // var speed = _runtimeMovementSettingsData.DashDistance 
+            if (!_dashAbility.IsAvailable) return;
             
-            Debug.Log(direction);
-            
-            _playerMovingController.Move(direction.normalized, _runtimeMovementSettingsData.DashSpeed, 
-                ForceMode.Impulse, false);
-            
-            _playerAnimationController.Animate(PlayerAnimationController.AnimationKey.Dash);
+            _runtimeMovementSettingsData.CanMoveSelf = false;
+                
+            await _dashAbility.Dash(direction, _runtimeMovementSettingsData.DashCooldownMillis, 
+                _runtimeMovementSettingsData.DashSpeed);
+
+            _runtimeMovementSettingsData.CanMoveSelf = true;
         }
     }
 }

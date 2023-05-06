@@ -17,5 +17,5 @@ MonoBehaviour:
     RotationSpeed: 360
     MovingSpeed: 100
     MaxMoveSpeed: 100
-    DashSpeed: 10
-    MaxDashSpeed: -1
+    DashSpeed: 50
+    DashCooldownMillis: 250

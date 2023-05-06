@@ -8,14 +8,12 @@ namespace Game.Scripts.Player
     public class PlayerMovingController
     {
         private Rigidbody _rigidbody;
-        private Collider _collider;
         
         private Tweener _rotationTween;
 
-        public PlayerMovingController(Rigidbody rigidbody, Collider collider)
+        public PlayerMovingController(Rigidbody rigidbody)
         {
             _rigidbody = rigidbody;
-            _collider = collider;
         }
 
         /// <summary>
@@ -51,12 +49,7 @@ namespace Game.Scripts.Player
                 .DORotate(rotation, speedMultiplier)
                 .SetSpeedBased(true);
         }
-        
-        public void FixedUpdateCallback()
-        {
-            
-        }
-        
+
         private void ClampVelocity(float maxVelocity)
         {
             _rigidbody.velocity = Vector3.ClampMagnitude(_rigidbody.velocity, maxVelocity);
