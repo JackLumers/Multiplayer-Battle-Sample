@@ -26,11 +26,12 @@ namespace Game.Scripts.Networking
             var spawnPoint = _spawnPointsList[_random.Next(_spawnPointsList.Count)];
             _spawnPointsList.Remove(spawnPoint);
             
-            var player = Instantiate(playerPrefab, spawnPoint.position, spawnPoint.rotation);
+            var playerObject = Instantiate(playerPrefab, spawnPoint.position, spawnPoint.rotation);
+            var playerController = playerObject.GetComponent<PlayerController>();
 
-            _gameUiWindow.RegisterPlayer(player.GetComponent<PlayerController>());
-            
-            NetworkServer.AddPlayerForConnection(conn, player);
+            playerController.Initialized += OnPlayerControllerInitialized;
+
+            NetworkServer.AddPlayerForConnection(conn, playerObject);
         }
 
         public override void OnServerDisconnect(NetworkConnectionToClient conn)
@@ -42,6 +43,11 @@ namespace Game.Scripts.Networking
             
             // call base functionality (actually destroys the player)
             base.OnServerDisconnect(conn);
+        }
+        
+        private void OnPlayerControllerInitialized(PlayerController playerController)
+        {
+            _gameUiWindow.RegisterPlayer(playerController, playerController.PlayerData);
         }
     }
 }

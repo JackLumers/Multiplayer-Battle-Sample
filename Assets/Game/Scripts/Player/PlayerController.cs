@@ -1,3 +1,4 @@
+using System;
 using Game.Scripts.Globals;
 using Game.Scripts.Player.Input;
 using Game.Scripts.Player.ScriptableObjects;
@@ -12,41 +13,67 @@ namespace Game.Scripts.Player
         [Header("PhysicsCharacter Fields")] 
         [SerializeField] private Transform _lookingDirection;
         [SerializeField] private Transform _characterModelTransform;
-        [SerializeField] private PlayerMovementSettings _playerMovementSettings;
+        [SerializeField] private PlayerMovementConfig _playerMovementConfig;
+        [SerializeField] private DummyPlayersDataConfig _dummyPlayersDataConfig;
         [SerializeField] private Animator _animator;
+        [SerializeField] private MeshRenderer _meshRenderer;
+        [SerializeField] private SpriteRenderer _lookingDirectionMarkRenderer;
 
         private MovementSettingsData _runtimeMovementSettingsData;
+        private PlayerData _playerData;
 
         private Rigidbody _rigidbody;
         private PlayerMovingController _playerMovingController;
         private PlayerAnimationController _playerAnimationController;
         private PlayerInputController _playerInputController;
+        private PlayerAppearanceController _playerAppearanceController;
         private DashAbility _dashAbility;
         
         public Vector3 PlayerLookingDirection => _lookingDirection.position - _characterModelTransform.position;
+        public PlayerData PlayerData => _playerData;
+
+        public event Action<PlayerController> Initialized;
 
         protected void Start()
         {
             _rigidbody = GetComponent<Rigidbody>();
 
-            _runtimeMovementSettingsData = _playerMovementSettings.MovementSettingsData;
+            _runtimeMovementSettingsData = _playerMovementConfig.MovementSettingsData;
             
             _playerMovingController = new PlayerMovingController(_rigidbody);
 
             _playerAnimationController = new PlayerAnimationController(_animator);
-
-            // Preventing input from local player to remote players
-            if(isLocalPlayer) 
-                _playerInputController = new PlayerInputController(this);
-
+            
             _dashAbility = new DashAbility(true, this, 
                 _playerMovingController, _playerAnimationController);
+
+            _playerAppearanceController = new PlayerAppearanceController(_meshRenderer, 
+                _lookingDirectionMarkRenderer);
+            
+            if (isLocalPlayer)
+            {
+                // Preventing input from local player to remote players
+                _playerInputController = new PlayerInputController(this);
+                
+                _playerData = _dummyPlayersDataConfig.LocalPlayerData;
+                _playerAppearanceController.SetColor(_dummyPlayersDataConfig.LocalPlayerData.TeamColor);
+            }
+            else
+            {
+                _playerData = _dummyPlayersDataConfig.RemotePlayerData;
+                _playerAppearanceController.SetColor(_dummyPlayersDataConfig.RemotePlayerData.TeamColor);
+            }
+            
+            Initialized?.Invoke(this);
         }
 
         private void OnDestroy()
         {
+            Initialized = null;
+            
             _playerInputController?.Dispose();
             _dashAbility?.Dispose();
+            _playerAppearanceController?.Dispose();
         }
 
         [ServerCallback]

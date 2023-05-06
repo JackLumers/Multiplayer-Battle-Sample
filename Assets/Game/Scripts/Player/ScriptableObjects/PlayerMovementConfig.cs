@@ -6,7 +6,7 @@ namespace Game.Scripts.Player.ScriptableObjects
 {
     [CreateAssetMenu(menuName = ProjectConstants.ScriptableObjectsAssetMenuName + "/Create new PlayerMovementSettings")]
     [Serializable]
-    public class PlayerMovementSettings : ScriptableObject
+    public class PlayerMovementConfig : ScriptableObject
     {
         [SerializeField] private MovementSettingsData _movementSettingsData;
 

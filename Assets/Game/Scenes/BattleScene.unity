@@ -424,6 +424,7 @@ MonoBehaviour:
   - {fileID: 868610734}
   - {fileID: 1657593160}
   _gameUiWindow: {fileID: 2073690038}
+  _dummyPlayersDataConfig: {fileID: 11400000, guid: 2ef382426b6cff44cb61f30df09402f2, type: 2}
 --- !u!4 &421331324
 Transform:
   m_ObjectHideFlags: 0
@@ -1176,7 +1177,7 @@ Canvas:
   m_OverrideSorting: 0
   m_OverridePixelPerfect: 0
   m_SortingBucketNormalizedSize: 0
-  m_AdditionalShaderChannelsFlag: 25
+  m_AdditionalShaderChannelsFlag: 1
   m_SortingLayerID: 0
   m_SortingOrder: 0
   m_TargetDisplay: 0
@@ -1237,7 +1238,7 @@ RectTransform:
   m_AnchorMin: {x: 1, y: 1}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
+  m_SizeDelta: {x: 500, y: 0}
   m_Pivot: {x: 1, y: 1}
 --- !u!114 &2141935604
 MonoBehaviour:
@@ -1277,5 +1278,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3245ec927659c4140ac4f8d17403cc18, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_HorizontalFit: 1
+  m_HorizontalFit: 0
   m_VerticalFit: 1

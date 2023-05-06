@@ -222,7 +222,6 @@ GameObject:
   - component: {fileID: 3310989644092952222}
   - component: {fileID: 3310989644092952220}
   - component: {fileID: 3310989644092952223}
-  - component: {fileID: 3310989644092952221}
   m_Layer: 0
   m_Name: PlayerScoreElement
   m_TagString: Untagged
@@ -237,7 +236,7 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3310989644092952217}
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -272,23 +271,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ed4b7943901241a89399cf182c828a05, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &3310989644092952221
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3310989644092952217}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 306cc8c2b49d7114eaa3623786fc2126, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_IgnoreLayout: 0
-  m_MinWidth: 500
-  m_MinHeight: -1
-  m_PreferredWidth: -1
-  m_PreferredHeight: -1
-  m_FlexibleWidth: -1
-  m_FlexibleHeight: -1
-  m_LayoutPriority: 1
+  _backgroundImage: {fileID: 3310989642289555021}
+  _text: {fileID: 3310989643361123075}

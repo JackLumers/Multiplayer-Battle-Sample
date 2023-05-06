@@ -13,7 +13,7 @@ namespace Game.Scripts.Player
 
         public void Animate(AnimationKey key)
         {
-            // TODO: Animate states here
+            // TODO: Animate here
         }
         
         public enum AnimationKey
