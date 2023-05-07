@@ -31,7 +31,10 @@ namespace Game.Scripts.Player
         private PlayerAppearanceController _playerAppearanceController;
         private DashAbility _dashAbility;
 
+        private Transform _transform;
+
         private CancellationTokenSource _invincibilityStatusChangeCts;
+        
         private HashSet<string> _invincibilityFlags = new();
 
         public Vector3 PlayerLookingDirection => _lookingDirection.position - _characterModelTransform.position;
@@ -43,6 +46,8 @@ namespace Game.Scripts.Player
         
         protected void Start()
         {
+            _transform = transform;
+
             _playerData = _dummyPlayersDataConfig.CommonPlayerData;
             
             _rigidbody = GetComponent<Rigidbody>();
@@ -70,7 +75,7 @@ namespace Game.Scripts.Player
                 _metaPlayerData = _dummyPlayersDataConfig.RemotePlayerData;
                 _playerAppearanceController.SetColor(_dummyPlayersDataConfig.RemotePlayerData.TeamColor);
             }
-            
+
             Initialized?.Invoke(this);
             
             _metaPlayerData.Changed += OnPlayerMetaDataChanged;
@@ -101,16 +106,20 @@ namespace Game.Scripts.Player
         [ServerCallback]
         private void OnCollisionEnter(Collision collision)
         {
-            if (this != null && _dashAbility is {IsPerforming: true} &&
-                collision.gameObject.CompareTag(ProjectConstants.PlayerTag))
+            if (this != null && collision.gameObject.CompareTag(ProjectConstants.PlayerTag))
             {
                 var otherPlayer = collision.gameObject.GetComponent<PlayerController>();
-                if (!otherPlayer.IsInvincible)
+                
+                // If this player dashes in other player
+                if (_dashAbility is {IsPerforming: true} && !otherPlayer.IsInvincible)
                 {
                     _metaPlayerData.Score += 1;
-
-                    otherPlayer.SetTemporarilyInvincible("DamageTaken",
-                        _playerData.InvincibilityAfterDamageTimeMillis);
+                }
+                
+                // If other player dashes in this player
+                if (otherPlayer._dashAbility is {IsPerforming: true} && !IsInvincible)
+                {
+                    CommandSetTemporarilyInvincible("DamageTaken", _playerData.InvincibilityAfterDamageTimeMillis);
                 }
             }
         }
@@ -132,7 +141,7 @@ namespace Game.Scripts.Player
 
             var rotation = new Vector3(0, rotationY, 0);
             
-            _playerMovingController.Rotate(_characterModelTransform, rotation, _playerData.RotationSpeed);
+            _playerMovingController.Rotate(_transform, rotation, _playerData.RotationSpeed);
             
             _playerMovingController.Move(direction, _playerData.MovingSpeed, 
                 ForceMode.VelocityChange, true, _playerData.MaxMoveSpeed);
@@ -168,14 +177,14 @@ namespace Game.Scripts.Player
                 : _metaPlayerData.TeamColor);
         }
 
-        public void SetTemporarilyInvincible(string context, int millis)
+        private void CommandSetTemporarilyInvincible(string context, int millis)
         {
             _invincibilityStatusChangeCts?.Cancel();
             _invincibilityStatusChangeCts = new CancellationTokenSource();
             
             SetTempInvincibleProcess(context, millis, _invincibilityStatusChangeCts.Token).Forget();
         }
-        
+
         /// <summary>
         /// Used to make player temporarily invincible.
         /// Notice that if cancelled, player will not be vulnerable again by the time end.

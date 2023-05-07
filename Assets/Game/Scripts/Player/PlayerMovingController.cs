@@ -42,10 +42,10 @@ namespace Game.Scripts.Player
             }
         }
 
-        public void Rotate(Transform characterModelTransform, Vector3 rotation, float speedMultiplier)
+        public void Rotate(Transform transform, Vector3 rotation, float speedMultiplier)
         {
             _rotationTween?.Kill();
-            _rotationTween = characterModelTransform
+            _rotationTween = transform
                 .DORotate(rotation, speedMultiplier)
                 .SetSpeedBased(true);
         }

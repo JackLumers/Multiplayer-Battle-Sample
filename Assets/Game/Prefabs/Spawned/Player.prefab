@@ -10,11 +10,11 @@ GameObject:
   m_Component:
   - component: {fileID: 3051582336983108820}
   - component: {fileID: 3051582336983108824}
+  - component: {fileID: 7618229941322880084}
   - component: {fileID: 3051582336983108825}
   - component: {fileID: 3051582336983108826}
   - component: {fileID: 3051582336983108827}
   - component: {fileID: 3051582336983108831}
-  - component: {fileID: 7618229941322880084}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -60,6 +60,38 @@ MonoBehaviour:
   _animator: {fileID: 3051582336983108831}
   _meshRenderer: {fileID: 3051582337915880626}
   _lookingDirectionMarkRenderer: {fileID: 3051582337795606050}
+--- !u!114 &7618229941322880084
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3051582336983108816}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2f74aedd71d9a4f55b3ce499326d45fb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  syncDirection: 1
+  syncMode: 0
+  syncInterval: 0
+  target: {fileID: 3051582336983108820}
+  clientAuthority: 0
+  syncPosition: 1
+  syncRotation: 1
+  syncScale: 1
+  interpolatePosition: 1
+  interpolateRotation: 1
+  interpolateScale: 1
+  showGizmos: 0
+  showOverlay: 0
+  overlayColor: {r: 0, g: 0, b: 0, a: 0.5}
+  onlySyncOnChange: 1
+  bufferResetMultiplier: 5
+  positionSensitivity: 0.001
+  rotationSensitivity: 0.001
+  scaleSensitivity: 0.001
+  timelineOffset: 0
 --- !u!114 &3051582336983108825
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -96,10 +128,10 @@ MonoBehaviour:
   clientAuthority: 1
   syncVelocity: 1
   clearVelocity: 0
-  velocitySensitivity: 0.1
+  velocitySensitivity: 0.001
   syncAngularVelocity: 1
   clearAngularVelocity: 0
-  angularVelocitySensitivity: 0.1
+  angularVelocitySensitivity: 0.001
 --- !u!54 &3051582336983108827
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -137,38 +169,6 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
---- !u!114 &7618229941322880084
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3051582336983108816}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2f74aedd71d9a4f55b3ce499326d45fb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  syncDirection: 0
-  syncMode: 0
-  syncInterval: 0
-  target: {fileID: 3051582336983108820}
-  clientAuthority: 0
-  syncPosition: 1
-  syncRotation: 1
-  syncScale: 0
-  interpolatePosition: 1
-  interpolateRotation: 1
-  interpolateScale: 1
-  showGizmos: 0
-  showOverlay: 0
-  overlayColor: {r: 0, g: 0, b: 0, a: 0.5}
-  onlySyncOnChange: 1
-  bufferResetMultiplier: 5
-  positionSensitivity: 0.01
-  rotationSensitivity: 0.01
-  scaleSensitivity: 0.01
-  timelineOffset: 0
 --- !u!1 &3051582337795606076
 GameObject:
   m_ObjectHideFlags: 0

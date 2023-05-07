@@ -7,7 +7,7 @@ using UnityEngine;
 namespace Game.Scripts.UI
 {
     [RequireComponent(typeof(Canvas))]
-    public class GameUiWindow : MonoBehaviour
+    public class GameUiWindow : NetworkBehaviour
     {
         [SerializeField] private Transform _scoreElementsLayout;
         [SerializeField] private RoundResultElement _roundResultElement;
@@ -31,6 +31,7 @@ namespace Game.Scripts.UI
             if (!_disabledPlayerScoreElements.TryDequeue(out var playerScoreElement))
             {
                 playerScoreElement = Instantiate(_playerScoreElementPrefab, _scoreElementsLayout);
+                
                 playerScoreElement.gameObject.SetActive(false);
             }
             
@@ -71,14 +72,18 @@ namespace Game.Scripts.UI
             }
         }
 
+        [ClientRpc]
         public void ShowGameResultAndRestartTimer(MetaPlayerData winnerData, int restartMillis)
         {
+            Debug.Log($"{winnerData.Name}, {winnerData.Score}, {winnerData.TeamColor}");
+
             _roundResultElement.SetWinnerData(winnerData);
             _roundResultElement.StartVisualTimer(restartMillis).Forget();
             
             _roundResultElement.gameObject.SetActive(true);
         }
 
+        [ClientRpc]
         public void HideGameResult()
         {
             _roundResultElement.gameObject.SetActive(false);

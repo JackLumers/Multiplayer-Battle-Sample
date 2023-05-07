@@ -28,18 +28,18 @@ namespace Game.Scripts.Player.ScriptableObjects
     [Serializable]
     public struct MetaPlayerData
     {
-        [Header("Meta")]
-        [SerializeField] private string _name;
-        [SerializeField] private Color _teamColor;
-        
-        [SyncVar]
-        [SerializeField] private int _score;
-        
+        [Header("Meta")] 
+        [SyncVar] [SerializeField] private string _name;
+        [SyncVar] [SerializeField] private Color _teamColor;
+        [SyncVar] [SerializeField] private int _score;
+
         public event Action<MetaPlayerData> Changed;
 
         public int Score
         {
             get => _score;
+
+            [Command]
             set
             {
                 _score = value;
@@ -50,7 +50,7 @@ namespace Game.Scripts.Player.ScriptableObjects
         public string Name => _name;
         public Color TeamColor => _teamColor;
     }
-    
+
     [Serializable]
     public struct PlayerData
     {
