@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 3051582336983108826}
   - component: {fileID: 3051582336983108827}
   - component: {fileID: 3051582336983108831}
+  - component: {fileID: 7618229941322880084}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -52,9 +53,9 @@ MonoBehaviour:
   syncDirection: 0
   syncMode: 0
   syncInterval: 0
+  _invincibilityColor: {r: 1, g: 0.24056602, b: 0.24056602, a: 1}
   _lookingDirection: {fileID: 3051582337795606051}
   _characterModelTransform: {fileID: 3051582337915880588}
-  _playerMovementConfig: {fileID: 11400000, guid: 6cba4e5f38320924998a8cbdb2e0cbfd, type: 2}
   _dummyPlayersDataConfig: {fileID: 11400000, guid: 2ef382426b6cff44cb61f30df09402f2, type: 2}
   _animator: {fileID: 3051582336983108831}
   _meshRenderer: {fileID: 3051582337915880626}
@@ -125,7 +126,7 @@ Animator:
   m_GameObject: {fileID: 3051582336983108816}
   m_Enabled: 1
   m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: bed188aefb7ec1b4dbc21e4ea47c0615, type: 2}
   m_CullingMode: 0
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
@@ -136,6 +137,38 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &7618229941322880084
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3051582336983108816}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2f74aedd71d9a4f55b3ce499326d45fb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  syncDirection: 0
+  syncMode: 0
+  syncInterval: 0
+  target: {fileID: 3051582336983108820}
+  clientAuthority: 0
+  syncPosition: 1
+  syncRotation: 1
+  syncScale: 0
+  interpolatePosition: 1
+  interpolateRotation: 1
+  interpolateScale: 1
+  showGizmos: 0
+  showOverlay: 0
+  overlayColor: {r: 0, g: 0, b: 0, a: 0.5}
+  onlySyncOnChange: 1
+  bufferResetMultiplier: 5
+  positionSensitivity: 0.01
+  rotationSensitivity: 0.01
+  scaleSensitivity: 0.01
+  timelineOffset: 0
 --- !u!1 &3051582337795606076
 GameObject:
   m_ObjectHideFlags: 0
@@ -210,7 +243,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_Sprite: {fileID: 10915, guid: 0000000000000000f000000000000000, type: 0}
-  m_Color: {r: 1, g: 0.60045624, b: 0, a: 0.65882355}
+  m_Color: {r: 1, g: 1, b: 1, a: 0.65882355}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0

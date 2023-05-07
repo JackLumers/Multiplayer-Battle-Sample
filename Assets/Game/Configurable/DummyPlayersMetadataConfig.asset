@@ -12,11 +12,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8cf8051a3b1f41f79a16669ca91d837c, type: 3}
   m_Name: DummyPlayersMetadataConfig
   m_EditorClassIdentifier: 
+  _commonPlayerData:
+    CanMoveSelf: 1
+    RotationSpeed: 360
+    MovingSpeed: 100
+    MaxMoveSpeed: 100
+    DashSpeed: 50
+    DashCooldownMillis: 250
+    InvincibilityAfterDamageTimeMillis: 3000
   _localPlayerData:
-    Name: Local Player
-    TeamColor: {r: 0.3254717, g: 0.9610095, b: 1, a: 1}
-    Score: 0
+    _name: Local Player
+    _teamColor: {r: 0.19339621, g: 1, b: 0.8649027, a: 1}
+    _score: 0
   _remotePlayerData:
-    Name: Remote Player
-    TeamColor: {r: 1, g: 0.3537736, b: 0.3537736, a: 1}
-    Score: 0
+    _name: Remote Player
+    _teamColor: {r: 1, g: 0.70821154, b: 0.2980392, a: 1}
+    _score: 0

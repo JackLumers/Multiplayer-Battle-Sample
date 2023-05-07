@@ -41,7 +41,7 @@ namespace Game.Scripts.Player
             _playerMovingController.Move(direction.normalized, distance, 
                 ForceMode.Impulse, false);
             
-            _playerAnimationController.Animate(PlayerAnimationController.AnimationKey.Dash);
+            _playerAnimationController.AnimateDash();
             
             _cts?.Cancel();
             _cts?.Dispose();

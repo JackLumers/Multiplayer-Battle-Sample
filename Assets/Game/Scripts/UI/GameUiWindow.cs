@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using Game.Scripts.Player;
 using Game.Scripts.Player.ScriptableObjects;
+using Mirror;
 using UnityEngine;
 
 namespace Game.Scripts.UI
@@ -9,19 +10,22 @@ namespace Game.Scripts.UI
     public class GameUiWindow : MonoBehaviour
     {
         [SerializeField] private Transform _scoreElementsLayout;
+        [SerializeField] private RoundResultElement _roundResultElement;
         [SerializeField] private PlayerScoreElement _playerScoreElementPrefab;
         
         // Can be taken from Pooling System + Addressable Assets Async Instantiation,
         // but for sake of simplicity will do.
         private Queue<PlayerScoreElement> _disabledPlayerScoreElements = new();
         
-        // Key = netId
-        private Dictionary<uint, PlayerController> _registeredPlayerControllers = new();
-        private Dictionary<uint, PlayerScoreElement> _playerScoreElements = new();
+        // Key = connection id
+        private Dictionary<int, PlayerController> _registeredPlayerControllers = new();
+        private Dictionary<int, PlayerScoreElement> _playerScoreElements = new();
         
-        public void RegisterPlayer(PlayerController playerController, PlayerData playerData)
+        public void RegisterPlayer(PlayerController player, MetaPlayerData playerData)
         {
-            if (_registeredPlayerControllers.ContainsKey(playerController.netId)) 
+            var connectionId = player.connectionToClient.connectionId;
+            
+            if (_registeredPlayerControllers.ContainsKey(connectionId))
                 return;
 
             if (!_disabledPlayerScoreElements.TryDequeue(out var playerScoreElement))
@@ -30,27 +34,54 @@ namespace Game.Scripts.UI
                 playerScoreElement.gameObject.SetActive(false);
             }
             
-            _registeredPlayerControllers.Add(playerController.netId, playerController);
-            _playerScoreElements.Add(playerController.netId, playerScoreElement);
+            _registeredPlayerControllers.Add(connectionId, player);
+            _playerScoreElements.Add(connectionId, playerScoreElement);
 
-            playerScoreElement.SetScore(playerData.Name, playerData.Score.ToString());
-            playerScoreElement.SetBackgroundColor(playerData.TeamColor);
+            playerScoreElement.SetData(playerData);
+
+            player.MetaDataChanged += OnPlayerMetaChanged;
             
             playerScoreElement.gameObject.SetActive(true);
         }
 
-        public void UnregisterPlayer(uint netId)
+        public void UnregisterPlayer(int connectionId)
         {
-            if (!_registeredPlayerControllers.ContainsKey(netId)) 
+            if (!_registeredPlayerControllers.ContainsKey(connectionId)) 
                 return;
             
-            var scoreElement = _playerScoreElements[netId];
+            var scoreElement = _playerScoreElements[connectionId];
+            var player = _registeredPlayerControllers[connectionId];
+
             scoreElement.gameObject.SetActive(false);
+
+            player.MetaDataChanged -= OnPlayerMetaChanged;
             
-            _registeredPlayerControllers.Remove(netId);
-            _playerScoreElements.Remove(netId);
+            _registeredPlayerControllers.Remove(connectionId);
+            _playerScoreElements.Remove(connectionId);
             
             _disabledPlayerScoreElements.Enqueue(scoreElement);
+        }
+        
+        private void OnPlayerMetaChanged(PlayerController playerController, MetaPlayerData newData)
+        {
+            if (_playerScoreElements.TryGetValue(playerController.connectionToClient.connectionId,
+                    out var playerScoreElement))
+            {
+                playerScoreElement.SetData(newData);
+            }
+        }
+
+        public void ShowGameResultAndRestartTimer(MetaPlayerData winnerData, int restartMillis)
+        {
+            _roundResultElement.SetWinnerData(winnerData);
+            _roundResultElement.StartVisualTimer(restartMillis).Forget();
+            
+            _roundResultElement.gameObject.SetActive(true);
+        }
+
+        public void HideGameResult()
+        {
+            _roundResultElement.gameObject.SetActive(false);
         }
     }
 }

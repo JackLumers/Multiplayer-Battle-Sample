@@ -1,4 +1,5 @@
-﻿using TMPro;
+﻿using Game.Scripts.Player.ScriptableObjects;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -8,15 +9,11 @@ namespace Game.Scripts.UI
     {
         [SerializeField] private Image _backgroundImage;
         [SerializeField] private TextMeshProUGUI _text;
-        
-        public void SetScore(string prefix, string score)
-        {
-            _text.text = $"{prefix} : {score}";
-        }
 
-        public void SetBackgroundColor(Color color)
+        public void SetData(MetaPlayerData metaPlayerData)
         {
-            _backgroundImage.color = color;
+            _text.text = $"{metaPlayerData.Name} : {metaPlayerData.Score}";
+            _backgroundImage.color = metaPlayerData.TeamColor;
         }
     }
 }

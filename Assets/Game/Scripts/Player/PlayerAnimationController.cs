@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using Game.Scripts.Globals;
+using UnityEngine;
 
 namespace Game.Scripts.Player
 {
@@ -11,17 +12,14 @@ namespace Game.Scripts.Player
             _playerAnimator = playerAnimator;
         }
 
-        public void Animate(AnimationKey key)
+        public void AnimateMoving(bool isMoving)
         {
-            // TODO: Animate here
+            _playerAnimator.SetBool(AnimationConstants.IsMoving, isMoving);
         }
         
-        public enum AnimationKey
+        public void AnimateDash()
         {
-            Move,
-            Dash,
-            Death,
-            DamageTaken
+            _playerAnimator.SetTrigger(AnimationConstants.DashTrigger);
         }
     }
 }

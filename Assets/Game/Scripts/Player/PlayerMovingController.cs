@@ -5,7 +5,7 @@ using UnityEngine;
 namespace Game.Scripts.Player
 {
     [Serializable]
-    public class PlayerMovingController
+    public class PlayerMovingController : IDisposable
     {
         private Rigidbody _rigidbody;
         
@@ -53,6 +53,11 @@ namespace Game.Scripts.Player
         private void ClampVelocity(float maxVelocity)
         {
             _rigidbody.velocity = Vector3.ClampMagnitude(_rigidbody.velocity, maxVelocity);
+        }
+
+        public void Dispose()
+        {
+            _rotationTween?.Kill();
         }
     }
 }
