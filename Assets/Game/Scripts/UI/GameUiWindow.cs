@@ -17,13 +17,45 @@ namespace Game.Scripts.UI
         // but for sake of simplicity will do.
         private Queue<PlayerScoreElement> _disabledPlayerScoreElements = new();
         
-        // Key = connection id
-        private Dictionary<int, PlayerController> _registeredPlayerControllers = new();
-        private Dictionary<int, PlayerScoreElement> _playerScoreElements = new();
+        // Key = NetId
+        private Dictionary<uint, PlayerController> _registeredPlayerControllers = new();
+        private Dictionary<uint, PlayerScoreElement> _playerScoreElements = new();
         
-        public void RegisterPlayer(PlayerController player, MetaPlayerData playerData)
+        [Server]
+        public void RegisterPlayer(PlayerController player, PlayerMetadata playerMetadata)
         {
-            var connectionId = player.connectionToClient.connectionId;
+            Debug.Log($"Server RegisterPlayer! Name: {playerMetadata.Name}", this);
+            RpcAddPlayerScoreElement(player, playerMetadata);
+        }
+
+        [Server]
+        public void UnregisterPlayer(uint playerNetId)
+        {
+            RpcRemovePlayerScoreElement(playerNetId);
+        }
+        
+        [ClientRpc]
+        public void RpcShowGameResultAndRestartTimer(PlayerMetadata winnerMetadata, int restartMillis)
+        {
+            Debug.Log($"{winnerMetadata.Name}, {winnerMetadata.Score}, {winnerMetadata.TeamColor}");
+
+            _roundResultElement.SetWinnerData(winnerMetadata);
+            _roundResultElement.StartVisualTimer(restartMillis).Forget();
+            
+            _roundResultElement.gameObject.SetActive(true);
+        }
+
+        [ClientRpc]
+        public void RpcHideGameResult()
+        {
+            _roundResultElement.gameObject.SetActive(false);
+        }
+
+        [ClientRpc]
+        private void RpcAddPlayerScoreElement(PlayerController player, PlayerMetadata playerMetadata)
+        {
+            Debug.Log($"RpcAddPlayerScoreElement! Name: {playerMetadata.Name}", this);
+            var connectionId = player.netId;
             
             if (_registeredPlayerControllers.ContainsKey(connectionId))
                 return;
@@ -31,62 +63,47 @@ namespace Game.Scripts.UI
             if (!_disabledPlayerScoreElements.TryDequeue(out var playerScoreElement))
             {
                 playerScoreElement = Instantiate(_playerScoreElementPrefab, _scoreElementsLayout);
-                
+
                 playerScoreElement.gameObject.SetActive(false);
             }
-            
+
             _registeredPlayerControllers.Add(connectionId, player);
             _playerScoreElements.Add(connectionId, playerScoreElement);
 
-            playerScoreElement.SetData(playerData);
+            playerScoreElement.SetData(playerMetadata);
 
-            player.MetaDataChanged += OnPlayerMetaChanged;
-            
+            player.ClientPlayerMetadataChanged += PlayerMetadataChanged;
+
             playerScoreElement.gameObject.SetActive(true);
         }
 
-        public void UnregisterPlayer(int connectionId)
+        [ClientRpc]
+        private void RpcRemovePlayerScoreElement(uint playerNetId)
         {
-            if (!_registeredPlayerControllers.ContainsKey(connectionId)) 
+            if (!_registeredPlayerControllers.ContainsKey(playerNetId)) 
                 return;
             
-            var scoreElement = _playerScoreElements[connectionId];
-            var player = _registeredPlayerControllers[connectionId];
+            var scoreElement = _playerScoreElements[playerNetId];
+            var player = _registeredPlayerControllers[playerNetId];
 
             scoreElement.gameObject.SetActive(false);
 
-            player.MetaDataChanged -= OnPlayerMetaChanged;
+            player.ClientPlayerMetadataChanged -= PlayerMetadataChanged;
             
-            _registeredPlayerControllers.Remove(connectionId);
-            _playerScoreElements.Remove(connectionId);
+            _registeredPlayerControllers.Remove(playerNetId);
+            _playerScoreElements.Remove(playerNetId);
             
             _disabledPlayerScoreElements.Enqueue(scoreElement);
         }
         
-        private void OnPlayerMetaChanged(PlayerController playerController, MetaPlayerData newData)
+        [Client]
+        private void PlayerMetadataChanged(PlayerController playerController, PlayerMetadata newMetadata)
         {
-            if (_playerScoreElements.TryGetValue(playerController.connectionToClient.connectionId,
+            if (_playerScoreElements.TryGetValue(playerController.netId,
                     out var playerScoreElement))
             {
-                playerScoreElement.SetData(newData);
+                playerScoreElement.SetData(newMetadata);
             }
-        }
-
-        [ClientRpc]
-        public void ShowGameResultAndRestartTimer(MetaPlayerData winnerData, int restartMillis)
-        {
-            Debug.Log($"{winnerData.Name}, {winnerData.Score}, {winnerData.TeamColor}");
-
-            _roundResultElement.SetWinnerData(winnerData);
-            _roundResultElement.StartVisualTimer(restartMillis).Forget();
-            
-            _roundResultElement.gameObject.SetActive(true);
-        }
-
-        [ClientRpc]
-        public void HideGameResult()
-        {
-            _roundResultElement.gameObject.SetActive(false);
         }
     }
 }

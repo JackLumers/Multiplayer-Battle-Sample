@@ -10,10 +10,10 @@ namespace Game.Scripts.UI
         [SerializeField] private Image _backgroundImage;
         [SerializeField] private TextMeshProUGUI _text;
 
-        public void SetData(MetaPlayerData metaPlayerData)
+        public void SetData(PlayerMetadata playerMetadata)
         {
-            _text.text = $"{metaPlayerData.Name} : {metaPlayerData.Score}";
-            _backgroundImage.color = metaPlayerData.TeamColor;
+            _text.text = $"{playerMetadata.Name} : {playerMetadata.Score}";
+            _backgroundImage.color = playerMetadata.TeamColor;
         }
     }
 }

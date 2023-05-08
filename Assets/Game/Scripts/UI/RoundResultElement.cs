@@ -18,15 +18,15 @@ namespace Game.Scripts.UI
 
         private CancellationTokenSource _timerCts;
         
-        public void SetWinnerData(MetaPlayerData metaPlayerData)
+        public void SetWinnerData(PlayerMetadata playerMetadata)
         {
             _backgroundImage.color = new Color(
-                metaPlayerData.TeamColor.r, 
-                metaPlayerData.TeamColor.g, 
-                metaPlayerData.TeamColor.b, 
+                playerMetadata.TeamColor.r, 
+                playerMetadata.TeamColor.g, 
+                playerMetadata.TeamColor.b, 
                 _backgroundAlpha);
             
-            _winnerText.text = $"{metaPlayerData.Name} won!";
+            _winnerText.text = $"{playerMetadata.Name} won!";
         }
         
         /// <returns>

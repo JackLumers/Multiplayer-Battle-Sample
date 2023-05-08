@@ -61,7 +61,7 @@ namespace Game.Scripts.Player.Input
         
         private void OnDashPerformed(InputAction.CallbackContext callbackContext)
         {
-            _playerController.Dash(_playerController.PlayerLookingDirection);
+            _playerController.CommandDash(_playerController.PlayerLookingDirection);
         }
         
         public void Dispose()

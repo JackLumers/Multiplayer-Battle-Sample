@@ -14,10 +14,15 @@ namespace Game.Scripts
         [SerializeField] private GameUiWindow _gameUiWindow;
 
         private GameObject _playerPrefab;
-        
         private System.Random _random = new();
-
-        private List<Transform> _spawnPointsList = new();
+        
+        /// <remarks>
+        /// Works good if player count lesser or equal to spawn points count.
+        /// 
+        /// Also player can spawn in another player in case already
+        /// spawned player will move in one of the other spawn points.
+        /// </remarks>
+        private readonly List<Transform> _spawnPointsList = new();
         
         // key - connection id,
         // value - player controller object (can be null)
@@ -26,15 +31,27 @@ namespace Game.Scripts
         private bool _endRound;
         private double _roundEndedTime;
 
-        public void Init(GameObject playerPrefab)
+        [Server]
+        public override void OnStartServer()
         {
-            _playerPrefab = playerPrefab;
+            base.OnStartServer();
+
+            _playerPrefab = NetworkManager.singleton.playerPrefab;
             
             _spawnPointsList.AddRange(_spawnPoints);
-            
+
             NetworkLoop.OnEarlyUpdate += OnNetworkEarlyUpdate;
         }
 
+        [Server]
+        public override void OnStopServer()
+        {
+            _spawnPointsList.Clear();
+            
+            NetworkLoop.OnEarlyUpdate -= OnNetworkEarlyUpdate;
+        }
+
+        [Server]
         private void OnNetworkEarlyUpdate()
         {
             if (!_endRound) return;
@@ -47,17 +64,19 @@ namespace Game.Scripts
             }
         }
         
+        [Server]
         public void OnServerAddPlayer(NetworkConnectionToClient conn)
         {
             var spawnPoint = _spawnPointsList[_random.Next(_spawnPointsList.Count)];
             _spawnPointsList.Remove(spawnPoint);
             
-            var player = SpawnPlayerController(conn, spawnPoint);
+            var player = PreparePlayerController(conn, spawnPoint);
             
             NetworkServer.AddPlayerForConnection(conn, player.gameObject);
         }
         
-        public void OnServerDisconnect(NetworkConnectionToClient conn)
+        [Server]
+        public void OnServerDisconnectPlayer(NetworkConnectionToClient conn)
         {
             _spawnPointsList.Clear();
             _spawnPointsList.AddRange(_spawnPoints);
@@ -68,15 +87,23 @@ namespace Game.Scripts
             }
         }
 
-        private PlayerController SpawnPlayerController(NetworkConnectionToClient conn, Transform spawnPoint)
+        [Server]
+        private PlayerController PreparePlayerController(NetworkConnectionToClient conn, Transform spawnPoint)
         {
             var playerObject = Instantiate(_playerPrefab, spawnPoint.position, spawnPoint.rotation);
             var playerController = playerObject.GetComponent<PlayerController>();
             
-            playerController.Initialized += OnPlayerControllerInitialized;
-            playerController.MetaDataChanged += OnPlayerMetadataChanged;
-
+            playerController.PrepareForSpawn(
+                new PlayerMetadata(
+                    $"Player {_playerControllers.Count + 1}",
+                    _battleConfig.GetRandomPlayerColor(),
+                    0)
+            );
+            
             _playerControllers.Add(conn, playerController);
+
+            playerController.InitializedAndSpawned += OnPlayerSpawned;
+            playerController.ServerPlayerMetadataChanged += PlayerMetadataChanged;
 
             return playerController;
         }
@@ -84,33 +111,37 @@ namespace Game.Scripts
         /// <summary>
         /// Removes player controller from being used (but not destroys it!)
         /// </summary>
+        [Server]
         private void RemovePlayerController(PlayerController playerController)
         {
-            playerController.Initialized -= OnPlayerControllerInitialized;
-            playerController.MetaDataChanged -= OnPlayerMetadataChanged;
+            playerController.InitializedAndSpawned -= OnPlayerSpawned;
+            playerController.ServerPlayerMetadataChanged -= PlayerMetadataChanged;
             
-            _gameUiWindow.UnregisterPlayer(playerController.connectionToClient.connectionId);
+            _gameUiWindow.UnregisterPlayer(playerController.netId);
             
             _playerControllers.Remove(playerController.connectionToClient);
         }
-
-        private void OnPlayerControllerInitialized(PlayerController playerController)
+        
+        [Server]
+        private void OnPlayerSpawned(PlayerController playerController)
         {
-            _gameUiWindow.RegisterPlayer(playerController, playerController.MetaPlayerData);
+            _gameUiWindow.RegisterPlayer(playerController, playerController.PlayerMetadata);
         }
         
-        private void OnPlayerMetadataChanged(PlayerController playerController, MetaPlayerData metaPlayerData)
+        [Server]
+        private void PlayerMetadataChanged(PlayerController playerController, PlayerMetadata playerMetadata)
         {
-            if (metaPlayerData.Score != _battleConfig.MaxScore) return;
+            if (playerMetadata.Score != _battleConfig.MaxScore) return;
 
             if (!_endRound)
             {
-                Debug.Log($"{metaPlayerData.Name}, {metaPlayerData.Score}, {metaPlayerData.TeamColor}");
-                EndRound(metaPlayerData);
+                Debug.Log($"{playerMetadata.Name}, {playerMetadata.Score}, {playerMetadata.TeamColor}");
+                EndRound(playerMetadata);
             }
         }
         
-        private void EndRound(MetaPlayerData wonPlayerMetadata)
+        [Server]
+        private void EndRound(PlayerMetadata wonPlayerMetadata)
         {
             _endRound = true;
             _roundEndedTime = NetworkTime.time;
@@ -125,9 +156,10 @@ namespace Game.Scripts
             }
             
             Debug.Log($"{wonPlayerMetadata.Name}, {wonPlayerMetadata.Score}, {wonPlayerMetadata.TeamColor}");
-            _gameUiWindow.ShowGameResultAndRestartTimer(wonPlayerMetadata, _battleConfig.RoundRestartSeconds * 1000);
+            _gameUiWindow.RpcShowGameResultAndRestartTimer(wonPlayerMetadata, _battleConfig.RoundRestartSeconds * 1000);
         }
         
+        [Server]
         private void StartNewRound()
         {
             _endRound = false;
@@ -146,11 +178,16 @@ namespace Game.Scripts
                 var spawnPoint = _spawnPointsList[_random.Next(_spawnPointsList.Count)];
                 _spawnPointsList.Remove(spawnPoint);
                 
-                var player = SpawnPlayerController(connection, spawnPoint);
+                var player = PreparePlayerController(connection, spawnPoint);
                 NetworkServer.ReplacePlayerForConnection(connection, player.gameObject);
             }
             
-            _gameUiWindow.HideGameResult();
+            _gameUiWindow.RpcHideGameResult();
+        }
+        
+        private void OnDestroy()
+        {
+            NetworkLoop.OnEarlyUpdate -= OnNetworkEarlyUpdate;
         }
     }
 }

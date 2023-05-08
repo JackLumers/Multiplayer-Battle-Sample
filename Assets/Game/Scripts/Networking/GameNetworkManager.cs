@@ -3,25 +3,20 @@ using UnityEngine;
 
 namespace Game.Scripts.Networking
 {
-    public class BattleNetworkManager : NetworkManager
+    public class GameNetworkManager : NetworkManager
     {
         [SerializeField] private BattleController _battleController;
-
-        public override void OnStartServer()
-        {
-            base.OnStartServer();
-            
-            _battleController.Init(playerPrefab);
-        }
-
+        
+        [Server]
         public override void OnServerAddPlayer(NetworkConnectionToClient conn)
         {
             _battleController.OnServerAddPlayer(conn);
         }
 
+        [Server]
         public override void OnServerDisconnect(NetworkConnectionToClient conn)
         {
-            _battleController.OnServerDisconnect(conn);
+            _battleController.OnServerDisconnectPlayer(conn);
             
             // call base functionality (actually destroys the player)
             base.OnServerDisconnect(conn);

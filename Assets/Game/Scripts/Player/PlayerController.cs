@@ -21,9 +21,9 @@ namespace Game.Scripts.Player
         [SerializeField] private MeshRenderer _meshRenderer;
         [SerializeField] private SpriteRenderer _lookingDirectionMarkRenderer;
 
-        private MetaPlayerData _metaPlayerData;
-        private PlayerData _playerData;
-        
+        [SyncVar] private PlayerMetadata _playerMetadata;
+        [SyncVar] private PlayerData _playerData;
+
         private Rigidbody _rigidbody;
         private PlayerMovingController _playerMovingController;
         private PlayerAnimationController _playerAnimationController;
@@ -38,90 +38,42 @@ namespace Game.Scripts.Player
         private HashSet<string> _invincibilityFlags = new();
 
         public Vector3 PlayerLookingDirection => _lookingDirection.position - _characterModelTransform.position;
-        public MetaPlayerData MetaPlayerData => _metaPlayerData;
+        public PlayerMetadata PlayerMetadata => _playerMetadata;
+        public PlayerData PlayerData => _playerData;
         public bool IsInvincible => _invincibilityFlags.Count > 0;
 
-        public event Action<PlayerController> Initialized;
-        public event Action<PlayerController, MetaPlayerData> MetaDataChanged; 
-        
-        protected void Start()
-        {
-            _transform = transform;
+        public event Action<PlayerController> InitializedAndSpawned; 
 
+        public event Action<PlayerController, PlayerMetadata> ServerPlayerMetadataChanged; 
+        public event Action<PlayerController, PlayerMetadata> ClientPlayerMetadataChanged;
+
+        public void PrepareForSpawn(PlayerMetadata playerMetadata)
+        {
+            _playerMetadata = playerMetadata;
+        }
+
+        private void Start()
+        {
             _playerData = _dummyPlayersDataConfig.CommonPlayerData;
-            
+
+            _transform = transform;
             _rigidbody = GetComponent<Rigidbody>();
             
             _playerMovingController = new PlayerMovingController(_rigidbody);
-
             _playerAnimationController = new PlayerAnimationController(_animator);
-            
-            _dashAbility = new DashAbility(true, this, 
-                _playerMovingController, _playerAnimationController);
+            _playerAppearanceController = new PlayerAppearanceController(_meshRenderer, _lookingDirectionMarkRenderer);
 
-            _playerAppearanceController = new PlayerAppearanceController(_meshRenderer, 
-                _lookingDirectionMarkRenderer);
+            _dashAbility = new DashAbility(this, _playerMovingController, _playerAnimationController);
             
+            // Prevents input from local player to remote players
             if (isLocalPlayer)
             {
-                // Preventing input from local player to remote players
                 _playerInputController = new PlayerInputController(this);
-                
-                _metaPlayerData = _dummyPlayersDataConfig.LocalPlayerData;
-                _playerAppearanceController.SetColor(_dummyPlayersDataConfig.LocalPlayerData.TeamColor);
             }
-            else
-            {
-                _metaPlayerData = _dummyPlayersDataConfig.RemotePlayerData;
-                _playerAppearanceController.SetColor(_dummyPlayersDataConfig.RemotePlayerData.TeamColor);
-            }
-
-            Initialized?.Invoke(this);
             
-            _metaPlayerData.Changed += OnPlayerMetaDataChanged;
-        }
-
-        private void OnPlayerMetaDataChanged(MetaPlayerData obj)
-        {
-            MetaDataChanged?.Invoke(this, _metaPlayerData);
-        }
-
-        private void OnDestroy()
-        {
-            Initialized = null;
-            MetaDataChanged = null;
+            _playerAppearanceController.SetColor(_playerMetadata.TeamColor);
             
-            _metaPlayerData.Changed -= OnPlayerMetaDataChanged;
-            
-            _invincibilityStatusChangeCts?.Dispose();
-            _invincibilityStatusChangeCts = null;
-            
-            _playerAppearanceController?.Dispose();
-            _playerMovingController?.Dispose();
-            _playerInputController?.Dispose();
-
-            _dashAbility?.Dispose();
-        }
-
-        [ServerCallback]
-        private void OnCollisionEnter(Collision collision)
-        {
-            if (this != null && collision.gameObject.CompareTag(ProjectConstants.PlayerTag))
-            {
-                var otherPlayer = collision.gameObject.GetComponent<PlayerController>();
-                
-                // If this player dashes in other player
-                if (_dashAbility is {IsPerforming: true} && !otherPlayer.IsInvincible)
-                {
-                    _metaPlayerData.Score += 1;
-                }
-                
-                // If other player dashes in this player
-                if (otherPlayer._dashAbility is {IsPerforming: true} && !IsInvincible)
-                {
-                    CommandSetTemporarilyInvincible("DamageTaken", _playerData.InvincibilityAfterDamageTimeMillis);
-                }
-            }
+            InitializedAndSpawned?.Invoke(this);
         }
 
         public void AttemptMoveSelf(Vector3 direction)
@@ -149,19 +101,77 @@ namespace Game.Scripts.Player
             _playerAnimationController.AnimateMoving(true);
         }
 
-        public async void Dash(Vector3 direction)
+        [Command]
+        public void CommandDash(Vector3 direction)
         {
-            if (!_dashAbility.IsAvailable) return;
-            
-            _playerData.CanMoveSelf = false;
-                
-            await _dashAbility.Dash(direction, _playerData.DashCooldownMillis, 
-                _playerData.DashSpeed);
-
-            _playerData.CanMoveSelf = true;
+            _dashAbility.ServerDash(direction);
         }
 
-        public void SetInvincible(string context, bool isInvincible)
+        [ClientRpc]
+        public void RpcOnDash(Vector3 direction, float power)
+        {
+            Debug.Log($"Rpc dash call. Power: {power}, Object NetId: {netId}");
+
+            _dashAbility.ClientDash(direction, power);
+        }
+        
+        [ClientRpc]
+        public void RpcBlockMovement(bool block)
+        {
+            _playerData.CanMoveSelf = !block;
+        }
+        
+        [ClientRpc]
+        public void RpcBlockDash(bool block)
+        {
+            _playerData.CanDash = !block;
+        }
+        
+        [ClientRpc]
+        public void RpcSetDashPerforming(bool isPerforming)
+        {
+            _playerData.IsDashPerforming = isPerforming;
+        }
+
+        /// <summary>
+        /// Called only for host because of <see cref="ServerCallbackAttribute"/>
+        /// </summary>
+        [ServerCallback]
+        private void OnCollisionEnter(Collision collision)
+        {
+            if (this != null && collision.gameObject.CompareTag(ProjectConstants.PlayerTag))
+            {
+                var otherPlayer = collision.gameObject.GetComponent<PlayerController>();
+             
+                // TODO: Remove debug or make debugging configurable
+                Debug.Log($"ConnectionId: {connectionToClient.connectionId}, " +
+                          $"Score: {_playerMetadata.Score}, " +
+                          $"Other player score: {otherPlayer._playerMetadata.Score}, " +
+                          $"Is dash null: {_dashAbility == null}," +
+                          $"Is other player invincible: {otherPlayer.IsInvincible}, " +
+                          $"Is dash performing: {_dashAbility is {IsPerforming: true}}");
+
+                // If this player dashes in other player
+                if (_dashAbility is {IsPerforming: true} && !otherPlayer.IsInvincible)
+                {
+                    _playerMetadata.Score += 1;
+                    
+                    RpcOnPlayerScoreChanged(_playerMetadata);
+                    ServerPlayerMetadataChanged?.Invoke(this, _playerMetadata);
+                    
+                    otherPlayer.SetTemporarilyInvincible("DamageTaken", _playerData.InvincibilityAfterDamageTimeMillis);
+                }
+            }
+        }
+
+        [ClientRpc]
+        private void RpcOnPlayerScoreChanged(PlayerMetadata playerMetadata)
+        {
+            ClientPlayerMetadataChanged?.Invoke(this, playerMetadata);
+        }
+        
+        [ClientRpc]
+        public void RpcSetInvincible(string context, bool isInvincible)
         {
             if (isInvincible)
             {
@@ -174,10 +184,11 @@ namespace Game.Scripts.Player
 
             _playerAppearanceController.SetColor(IsInvincible
                 ? _invincibilityColor
-                : _metaPlayerData.TeamColor);
+                : _playerMetadata.TeamColor);
         }
 
-        private void CommandSetTemporarilyInvincible(string context, int millis)
+        [Server]
+        private void SetTemporarilyInvincible(string context, int millis)
         {
             _invincibilityStatusChangeCts?.Cancel();
             _invincibilityStatusChangeCts = new CancellationTokenSource();
@@ -189,19 +200,35 @@ namespace Game.Scripts.Player
         /// Used to make player temporarily invincible.
         /// Notice that if cancelled, player will not be vulnerable again by the time end.
         /// </summary>
+        [Server]
         private async UniTask SetTempInvincibleProcess(string context, int millis, CancellationToken cancellationToken)
         {
             if(cancellationToken.IsCancellationRequested) 
                 return;
 
-            SetInvincible(context, true);
+            RpcSetInvincible(context, true);
 
             await UniTask.Delay(millis, DelayType.DeltaTime, PlayerLoopTiming.FixedUpdate, cancellationToken);
 
             if(cancellationToken.IsCancellationRequested) 
                 return;
             
-            SetInvincible(context, false);
+            RpcSetInvincible(context, false);
+        }
+        
+        private void OnDestroy()
+        {
+            ServerPlayerMetadataChanged = null;
+            ClientPlayerMetadataChanged = null;
+            
+            _invincibilityStatusChangeCts?.Dispose();
+            _invincibilityStatusChangeCts = null;
+            
+            _playerAppearanceController?.Dispose();
+            _playerMovingController?.Dispose();
+            _playerInputController?.Dispose();
+
+            _dashAbility?.Dispose();
         }
     }
 }

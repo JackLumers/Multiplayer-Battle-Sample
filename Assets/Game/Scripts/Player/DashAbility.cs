@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using Mirror;
 using UnityEngine;
 
 namespace Game.Scripts.Player
@@ -15,59 +16,75 @@ namespace Game.Scripts.Player
     /// </summary>
     public class DashAbility : IDisposable
     {
-        public bool IsAvailable { get; private set; }
-        public bool IsPerforming { get; private set; }
+        public bool IsPerforming => _playerController.PlayerData.IsDashPerforming;
+        public bool IsAvailable => _playerController.PlayerData.CanDash;
         
         private readonly PlayerController _playerController;
         private readonly PlayerMovingController _playerMovingController;
         private readonly PlayerAnimationController _playerAnimationController;
         
-        private CancellationTokenSource _cts;
+        private CancellationTokenSource _dashCts;
 
-        public DashAbility(bool isAvailable, PlayerController playerController, 
+        public DashAbility(PlayerController playerController, 
             PlayerMovingController playerMovingController, PlayerAnimationController playerAnimationController)
         {
-            IsAvailable = isAvailable;
-            
             _playerController = playerController;
             _playerMovingController = playerMovingController;
             _playerAnimationController = playerAnimationController;
-
-            _cts = CancellationTokenSource.CreateLinkedTokenSource(playerController.GetCancellationTokenOnDestroy());
         }
         
-        public async UniTask Dash(Vector3 direction, int cooldownMillis, float distance)
+        [Server]
+        public void ServerDash(Vector3 direction)
         {
-            _playerMovingController.Move(direction.normalized, distance, 
+            _dashCts?.Cancel();
+            _dashCts = new CancellationTokenSource();
+            
+            ServerDashProcess(direction, _dashCts.Token).Forget();
+        }
+        
+        [Server]
+        private async UniTaskVoid ServerDashProcess(Vector3 direction, CancellationToken cancellationToken)
+        {
+            Debug.Log($"Command dash call. NetId: {_playerController.netId}, " +
+                      $"Is dash available: {IsAvailable}");
+            
+            if (!IsAvailable) 
+                return;
+            
+            _playerController.RpcBlockMovement(true);
+            _playerController.RpcBlockDash(true);
+            _playerController.RpcSetDashPerforming(true);
+
+            _playerController.RpcOnDash(direction, _playerController.PlayerData.DashPower);
+
+            // Cooldown and duration
+            await UniTask.Delay(_playerController.PlayerData.DashCooldownMillis, 
+                    DelayType.DeltaTime, PlayerLoopTiming.FixedUpdate, cancellationToken)
+                .SuppressCancellationThrow();
+            
+            // Check because player can already be destroyed after cancellation
+            // TODO: Can be optimized using 2 cancellation tokens, since Null check is more expensive
+            if (_playerController != null)
+            {
+                _playerController.RpcBlockMovement(false);
+                _playerController.RpcBlockDash(false);
+                _playerController.RpcSetDashPerforming(false);
+            }
+        }
+        
+        [Client]
+        public void ClientDash(Vector3 direction, float power)
+        {
+            _playerMovingController.Move(direction.normalized, power, 
                 ForceMode.Impulse, false);
             
             _playerAnimationController.AnimateDash();
-            
-            _cts?.Cancel();
-            _cts?.Dispose();
-            _cts = CancellationTokenSource.CreateLinkedTokenSource(_playerController.GetCancellationTokenOnDestroy());
-            
-            await Cooldown(cooldownMillis, _cts.Token);
-        }
-        
-        /// <remarks>
-        /// Cooldown time also acts as performing ("damage dealing") time.
-        /// </remarks>
-        private async UniTask Cooldown(int cooldownMillis, CancellationToken cancellationToken)
-        {
-            IsAvailable = false;
-            IsPerforming = true;
-
-            await UniTask.Delay(cooldownMillis, DelayType.DeltaTime, PlayerLoopTiming.FixedUpdate, cancellationToken);
-
-            IsAvailable = true;
-            IsPerforming = false;
         }
 
         public void Dispose()
         {
-            _cts?.Dispose();
-            _cts = null;
+            _dashCts?.Dispose();
+            _dashCts = null;
         }
     }
 }

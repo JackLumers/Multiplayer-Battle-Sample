@@ -1,70 +1,57 @@
 ﻿using System;
 using Game.Scripts.Globals;
-using Mirror;
 using UnityEngine;
 
 namespace Game.Scripts.Player.ScriptableObjects
 {
     /// <summary>
     /// Contains info about players.
-    /// Used just to set local and remote player info, and could be used for test purposes.
+    /// Used to set initial local and remote player info, and could be used for test purposes.
     ///
     /// Theoretically could be parsed from some source, like tables, so
-    /// game designers can adjust values there.
+    /// game designers can adjust values from them.
     /// </summary>
     [CreateAssetMenu(menuName = ProjectConstants.ScriptableObjectsAssetMenuName + "/Create new DummyPlayerMetadataConfig")]
     [Serializable]
     public class DummyPlayersDataConfig : ScriptableObject
     {
         [SerializeField] private PlayerData _commonPlayerData;
-        [SerializeField] private MetaPlayerData _localPlayerData;
-        [SerializeField] private MetaPlayerData _remotePlayerData;
         
-        public MetaPlayerData LocalPlayerData => _localPlayerData;
-        public MetaPlayerData RemotePlayerData => _remotePlayerData;
         public PlayerData CommonPlayerData => _commonPlayerData;
     }
 
     [Serializable]
-    public struct MetaPlayerData
+    public struct PlayerMetadata
     {
         [Header("Meta")] 
-        [SyncVar] [SerializeField] private string _name;
-        [SyncVar] [SerializeField] private Color _teamColor;
-        [SyncVar] [SerializeField] private int _score;
+        public string Name;
+        public Color TeamColor;
+        public int Score;
 
-        public event Action<MetaPlayerData> Changed;
-
-        public int Score
+        public PlayerMetadata(string name, Color teamColor, int score)
         {
-            get => _score;
-
-            [Command]
-            set
-            {
-                _score = value;
-                Changed?.Invoke(this);
-            }
+            Name = name;
+            TeamColor = teamColor;
+            Score = score;
         }
-
-        public string Name => _name;
-        public Color TeamColor => _teamColor;
     }
 
     [Serializable]
     public struct PlayerData
     {
-        [Header("Flags")]
-        public bool CanMoveSelf;
-
         [Header("Movement")]
+        // TODO: Can be a player state in state pattern
+        public bool CanMoveSelf;
         public float RotationSpeed;
         public float MovingSpeed;
         public float MaxMoveSpeed;
-        
+
         [Header("Dash")]
-        // TODO: Change to distance
-        public float DashSpeed;
+        // TODO: Can be a player state in state pattern
+        public bool CanDash;
+        public bool IsDashPerforming;
+        
+        public float DashPower;
         public int DashCooldownMillis;
         
         [Header("Invincibility")] 
