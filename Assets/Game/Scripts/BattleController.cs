@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using Game.Scripts.Player;
 using Game.Scripts.Player.ScriptableObjects;
 using Game.Scripts.UI;
@@ -125,7 +126,7 @@ namespace Game.Scripts
         [Server]
         private void OnPlayerSpawned(PlayerController playerController)
         {
-            _gameUiWindow.RegisterPlayer(playerController, playerController.PlayerMetadata);
+            _gameUiWindow.UpdatePlayersScoreList(_playerControllers.Values.ToList());
         }
         
         [Server]

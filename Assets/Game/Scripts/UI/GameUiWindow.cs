@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using Game.Scripts.Player;
 using Game.Scripts.Player.ScriptableObjects;
 using Mirror;
@@ -13,24 +14,27 @@ namespace Game.Scripts.UI
         [SerializeField] private RoundResultElement _roundResultElement;
         [SerializeField] private PlayerScoreElement _playerScoreElementPrefab;
         
+        // Key = NetId
+        private readonly Dictionary<uint, PlayerScoreElement> _enabledClientPlayerScoreElements = new();
+        private readonly Dictionary<uint, PlayerController> _registeredPlayerControllers = new();
+        
         // Can be taken from Pooling System + Addressable Assets Async Instantiation,
         // but for sake of simplicity will do.
-        private Queue<PlayerScoreElement> _disabledPlayerScoreElements = new();
-        
-        // Key = NetId
-        private Dictionary<uint, PlayerController> _registeredPlayerControllers = new();
-        private Dictionary<uint, PlayerScoreElement> _playerScoreElements = new();
-        
+        private readonly Queue<PlayerScoreElement> _disabledPlayerScoreElements = new();
+
         [Server]
-        public void RegisterPlayer(PlayerController player, PlayerMetadata playerMetadata)
+        public void UpdatePlayersScoreList(List<PlayerController> players)
         {
-            Debug.Log($"Server RegisterPlayer! Name: {playerMetadata.Name}", this);
-            RpcAddPlayerScoreElement(player, playerMetadata);
+            Debug.Log($"Server UpdatePlayersScoreList! Players count: {players.Count}", this);
+
+            RpcUpdatePlayersList(players);
         }
 
         [Server]
         public void UnregisterPlayer(uint playerNetId)
         {
+            Debug.Log($"Server UnregisterPlayer! Id: {playerNetId}", this);
+
             RpcRemovePlayerScoreElement(playerNetId);
         }
         
@@ -50,40 +54,76 @@ namespace Game.Scripts.UI
         {
             _roundResultElement.gameObject.SetActive(false);
         }
-
+        
         [ClientRpc]
-        private void RpcAddPlayerScoreElement(PlayerController player, PlayerMetadata playerMetadata)
+        private void RpcUpdatePlayersList(List<PlayerController> players)
         {
-            Debug.Log($"RpcAddPlayerScoreElement! Name: {playerMetadata.Name}", this);
-            var connectionId = player.netId;
-            
-            if (_registeredPlayerControllers.ContainsKey(connectionId))
-                return;
+            Debug.Log($"RpcUpdatePlayersList! Name: {players.Count}", this);
 
-            if (!_disabledPlayerScoreElements.TryDequeue(out var playerScoreElement))
+            foreach (var player in players)
             {
-                playerScoreElement = Instantiate(_playerScoreElementPrefab, _scoreElementsLayout);
+                // Update already enabled if such exist
+                if (_enabledClientPlayerScoreElements.ContainsKey(player.netId))
+                {
+                    _enabledClientPlayerScoreElements[player.netId].SetData(player.PlayerMetadata);
+                }
+                // Create new score element and populate it's data
+                else
+                {
+                    // Get from disabled if such exist
+                    if (!_disabledPlayerScoreElements.TryDequeue(out var playerScoreElement))
+                    {
+                        playerScoreElement = Instantiate(_playerScoreElementPrefab, _scoreElementsLayout);
+                    }
 
-                playerScoreElement.gameObject.SetActive(false);
+                    _registeredPlayerControllers.Add(player.netId, player);
+                    _enabledClientPlayerScoreElements.Add(player.netId, playerScoreElement);
+
+                    playerScoreElement.SetData(player.PlayerMetadata);
+
+                    player.ClientPlayerMetadataChanged += PlayerMetadataChanged;
+
+                    playerScoreElement.gameObject.SetActive(true);
+                }
             }
-
-            _registeredPlayerControllers.Add(connectionId, player);
-            _playerScoreElements.Add(connectionId, playerScoreElement);
-
-            playerScoreElement.SetData(playerMetadata);
-
-            player.ClientPlayerMetadataChanged += PlayerMetadataChanged;
-
-            playerScoreElement.gameObject.SetActive(true);
         }
-
+        
         [ClientRpc]
         private void RpcRemovePlayerScoreElement(uint playerNetId)
+        {
+            Debug.Log($"RpcRemovePlayerScoreElement! NetId: {playerNetId}, Contains: {_registeredPlayerControllers.ContainsKey(playerNetId)}", this);
+
+            RemovePlayerScoreElement(playerNetId);
+        }
+        
+        [Client]
+        private void PlayerMetadataChanged(PlayerController playerController, PlayerMetadata newMetadata)
+        {
+            if (_enabledClientPlayerScoreElements.TryGetValue(playerController.netId,
+                    out var playerScoreElement))
+            {
+                playerScoreElement.SetData(newMetadata);
+            }
+        }
+
+        public override void OnStopClient()
+        {
+            base.OnStopClient();
+            
+            // Bugfix: prevents duplication of player score elements if client disconnects and connects again.
+            // Could be more optimized
+            foreach (var registeredPlayerController in _registeredPlayerControllers.Keys.ToList())
+            {
+                RemovePlayerScoreElement(registeredPlayerController);
+            }
+        }
+        
+        private void RemovePlayerScoreElement(uint playerNetId)
         {
             if (!_registeredPlayerControllers.ContainsKey(playerNetId)) 
                 return;
             
-            var scoreElement = _playerScoreElements[playerNetId];
+            var scoreElement = _enabledClientPlayerScoreElements[playerNetId];
             var player = _registeredPlayerControllers[playerNetId];
 
             scoreElement.gameObject.SetActive(false);
@@ -91,19 +131,9 @@ namespace Game.Scripts.UI
             player.ClientPlayerMetadataChanged -= PlayerMetadataChanged;
             
             _registeredPlayerControllers.Remove(playerNetId);
-            _playerScoreElements.Remove(playerNetId);
+            _enabledClientPlayerScoreElements.Remove(playerNetId);
             
             _disabledPlayerScoreElements.Enqueue(scoreElement);
-        }
-        
-        [Client]
-        private void PlayerMetadataChanged(PlayerController playerController, PlayerMetadata newMetadata)
-        {
-            if (_playerScoreElements.TryGetValue(playerController.netId,
-                    out var playerScoreElement))
-            {
-                playerScoreElement.SetData(newMetadata);
-            }
         }
     }
 }
