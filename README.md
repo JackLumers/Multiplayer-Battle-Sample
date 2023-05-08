@@ -15,16 +15,17 @@ No any special preparations, but I build using configuration as follows:
 1. Mono scripting backend.
 2. Windows standalone platform. 
 
-# Configuring
-1. You can configure round restart timing and max score in **BattleConfig**. Round restart timing defines delay between rounds. Max score is used to define how many times player need to dash in another player.
-3. **DummyPlayerMetadataConfig** is used to setup invincibility timings, dash power, team colors, local and remote player names, e.t.c.
-
 Not tested on others settings.
 
+# Configuring
+1. You can configure round restart timing and max score in **BattleConfig**. Round restart timing defines delay between rounds. Max score is used to define how many times player need to dash in another player.
+Therer also colors array that is used to randomly set color to players.
+3. **DummyPlayerMetadataConfig** is used to setup invincibility timings, dash power, setting initial values for some player flags, movement configuration.
+
 # Features
-* Local multiplayer!
-* Gamepad support!
-* Dash distance configuration;
+* Local multiplayer;
+* Gamepad support;
+* Dash power configuration;
 * Invincibility timing configuration;
 * Max score for round configuration;
 * Round start timer configuration;
@@ -34,4 +35,7 @@ Not tested on others settings.
 * DoTween: http://dotween.demigiant.com/
 * UniTask: https://github.com/Cysharp/UniTask
 * Input System: https://docs.unity3d.com/Packages/com.unity.inputsystem@1.5/manual/index.html
+
+# Possible problems
+Not tested for cheating possibilities. Not tested for bad network broblems, like high ping or packet loss.
 
