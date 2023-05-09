@@ -37,5 +37,5 @@ Therer also colors array that is used to randomly set color to players.
 * Input System: https://docs.unity3d.com/Packages/com.unity.inputsystem@1.5/manual/index.html
 
 # Possible problems
-Not tested for cheating possibilities. Not tested for bad network broblems, like high ping or packet loss.
+Not tested for cheating possibilities. Not tested for bad network, like high ping or packet loss.
 
