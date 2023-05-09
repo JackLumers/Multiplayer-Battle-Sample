@@ -3,6 +3,7 @@ using UnityEngine;
 
 namespace Game.Scripts.Player
 {
+    // There is no animations but just in case they will be 
     public class PlayerAnimationController
     {
         private Animator _playerAnimator;
@@ -11,7 +12,7 @@ namespace Game.Scripts.Player
         {
             _playerAnimator = playerAnimator;
         }
-
+        
         public void AnimateMoving(bool isMoving)
         {
             _playerAnimator.SetBool(AnimationConstants.IsMoving, isMoving);

@@ -22,11 +22,4 @@ MonoBehaviour:
     DashPower: 50
     DashCooldownMillis: 250
     InvincibilityAfterDamageTimeMillis: 3000
-  _hostPlayerData:
-    Name: Host Player
-    TeamColor: {r: 0.43867922, g: 0.9463086, b: 1, a: 1}
-    Score: 0
-  _remotePlayerData:
-    Name: Remote Player
-    TeamColor: {r: 1, g: 0.6494122, b: 0.5707547, a: 1}
-    Score: 0
+    InvincibilityColor: {r: 1, g: 0, b: 0, a: 1}

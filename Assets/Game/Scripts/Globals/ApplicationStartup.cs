@@ -9,6 +9,8 @@ namespace Game.Scripts.Globals
         {
             QualitySettings.vSyncCount = 0;
             Application.targetFrameRate = ProjectConstants.TargetFrameRate;
+
+            Cursor.lockState = CursorLockMode.Confined;
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using Game.Scripts.CameraManagement;
 using Game.Scripts.Player;
 using Game.Scripts.Player.ScriptableObjects;
 using Game.Scripts.UI;
@@ -13,6 +14,7 @@ namespace Game.Scripts
         [SerializeField] private BattleConfig _battleConfig;
         [SerializeField] private Transform[] _spawnPoints;
         [SerializeField] private GameUiWindow _gameUiWindow;
+        [SerializeField] private PlayerCameraManager _playerCameraManager;
 
         private GameObject _playerPrefab;
         private System.Random _random = new();
@@ -119,6 +121,7 @@ namespace Game.Scripts
             playerController.ServerPlayerMetadataChanged -= PlayerMetadataChanged;
             
             _gameUiWindow.UnregisterPlayer(playerController.netId);
+            _playerCameraManager.RpcDetachPlayer();
             
             _playerControllers.Remove(playerController.connectionToClient);
         }
@@ -127,6 +130,7 @@ namespace Game.Scripts
         private void OnPlayerSpawned(PlayerController playerController)
         {
             _gameUiWindow.UpdatePlayersScoreList(_playerControllers.Values.ToList());
+            _playerCameraManager.RpcAttachPlayer(playerController);
         }
         
         [Server]

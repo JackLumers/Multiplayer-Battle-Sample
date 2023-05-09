@@ -13,14 +13,14 @@ namespace Game.Scripts.Player
     [RequireComponent(typeof(Rigidbody))]
     public class PlayerController : NetworkBehaviour
     {
-        [SerializeField] private Color _invincibilityColor;
-        [SerializeField] private Transform _lookingDirection;
-        [SerializeField] private Transform _characterModelTransform;
         [SerializeField] private DummyPlayersDataConfig _dummyPlayersDataConfig;
+
+        [SerializeField] private Transform _modelLookingDirectionMark;
+        [SerializeField] private Transform _characterModelTransform;
         [SerializeField] private Animator _animator;
         [SerializeField] private MeshRenderer _meshRenderer;
         [SerializeField] private SpriteRenderer _lookingDirectionMarkRenderer;
-
+        
         [SyncVar] private PlayerMetadata _playerMetadata;
         [SyncVar] private PlayerData _playerData;
 
@@ -30,14 +30,13 @@ namespace Game.Scripts.Player
         private PlayerInputController _playerInputController;
         private PlayerAppearanceController _playerAppearanceController;
         private DashAbility _dashAbility;
-
-        private Transform _transform;
-
+        
         private CancellationTokenSource _invincibilityStatusChangeCts;
         
         private HashSet<string> _invincibilityFlags = new();
-
-        public Vector3 PlayerLookingDirection => _lookingDirection.position - _characterModelTransform.position;
+        
+        public Vector3 PlayerModelLookingDirection => _modelLookingDirectionMark.position - _characterModelTransform.position;
+        
         public PlayerMetadata PlayerMetadata => _playerMetadata;
         public PlayerData PlayerData => _playerData;
         public bool IsInvincible => _invincibilityFlags.Count > 0;
@@ -56,7 +55,6 @@ namespace Game.Scripts.Player
         {
             _playerData = _dummyPlayersDataConfig.CommonPlayerData;
 
-            _transform = transform;
             _rigidbody = GetComponent<Rigidbody>();
             
             _playerMovingController = new PlayerMovingController(_rigidbody);
@@ -64,18 +62,27 @@ namespace Game.Scripts.Player
             _playerAppearanceController = new PlayerAppearanceController(_meshRenderer, _lookingDirectionMarkRenderer);
 
             _dashAbility = new DashAbility(this, _playerMovingController, _playerAnimationController);
-            
-            // Prevents input from local player to remote players
-            if (isLocalPlayer)
-            {
-                _playerInputController = new PlayerInputController(this);
-            }
-            
+
             _playerAppearanceController.SetColor(_playerMetadata.TeamColor);
             
             InitializedAndSpawned?.Invoke(this);
         }
+        
+        [Client]
+        public void InitializeInput(Transform cameraTransform, Transform followerObjectTransform)
+        {
+            // Prevents input from local player to remote players
+            if (isLocalPlayer)
+            {
+                _playerInputController = new PlayerInputController(this, cameraTransform, followerObjectTransform);
+            }
+            else
+            {
+                Debug.LogWarning("Trying to initialize input for remote player. This is not allowed.", this);
+            }
+        }
 
+        [Client]
         public void AttemptMoveSelf(Vector3 direction)
         {
             if (!_playerData.CanMoveSelf) return;
@@ -93,7 +100,7 @@ namespace Game.Scripts.Player
 
             var rotation = new Vector3(0, rotationY, 0);
             
-            _playerMovingController.Rotate(_transform, rotation, _playerData.RotationSpeed);
+            _playerMovingController.Rotate(rotation, _playerData.RotationSpeed);
             
             _playerMovingController.Move(direction, _playerData.MovingSpeed, 
                 ForceMode.VelocityChange, true, _playerData.MaxMoveSpeed);
@@ -110,8 +117,6 @@ namespace Game.Scripts.Player
         [ClientRpc]
         public void RpcOnDash(Vector3 direction, float power)
         {
-            Debug.Log($"Rpc dash call. Power: {power}, Object NetId: {netId}");
-
             _dashAbility.ClientDash(direction, power);
         }
         
@@ -142,14 +147,6 @@ namespace Game.Scripts.Player
             if (this != null && collision.gameObject.CompareTag(ProjectConstants.PlayerTag))
             {
                 var otherPlayer = collision.gameObject.GetComponent<PlayerController>();
-             
-                // TODO: Remove debug or make debugging configurable
-                Debug.Log($"ConnectionId: {connectionToClient.connectionId}, " +
-                          $"Score: {_playerMetadata.Score}, " +
-                          $"Other player score: {otherPlayer._playerMetadata.Score}, " +
-                          $"Is dash null: {_dashAbility == null}," +
-                          $"Is other player invincible: {otherPlayer.IsInvincible}, " +
-                          $"Is dash performing: {_dashAbility is {IsPerforming: true}}");
 
                 // If this player dashes in other player
                 if (_dashAbility is {IsPerforming: true} && !otherPlayer.IsInvincible)
@@ -183,7 +180,7 @@ namespace Game.Scripts.Player
             }
 
             _playerAppearanceController.SetColor(IsInvincible
-                ? _invincibilityColor
+                ? _dummyPlayersDataConfig.CommonPlayerData.InvincibilityColor
                 : _playerMetadata.TeamColor);
         }
 
@@ -215,7 +212,14 @@ namespace Game.Scripts.Player
             
             RpcSetInvincible(context, false);
         }
-        
+
+        public override void OnStopClient()
+        {
+            base.OnStopClient();
+            
+            _playerInputController?.Dispose();
+        }
+
         private void OnDestroy()
         {
             ServerPlayerMetadataChanged = null;

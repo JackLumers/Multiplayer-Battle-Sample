@@ -47,7 +47,7 @@ namespace Game.Scripts.Player.ScriptableObjects
         public float MaxMoveSpeed;
 
         [Header("Dash")]
-        // TODO: Can be a player state in state pattern
+        // TODO: Can be a player states in state pattern
         public bool CanDash;
         public bool IsDashPerforming;
         
@@ -56,5 +56,6 @@ namespace Game.Scripts.Player.ScriptableObjects
         
         [Header("Invincibility")] 
         public int InvincibilityAfterDamageTimeMillis;
+        public Color InvincibilityColor;
     }
 }

@@ -25,16 +25,14 @@ namespace Game.Scripts.UI
         [Server]
         public void UpdatePlayersScoreList(List<PlayerController> players)
         {
-            Debug.Log($"Server UpdatePlayersScoreList! Players count: {players.Count}", this);
-
+            Debug.Log("UpdatePlayersScoreList!");
+            
             RpcUpdatePlayersList(players);
         }
 
         [Server]
         public void UnregisterPlayer(uint playerNetId)
         {
-            Debug.Log($"Server UnregisterPlayer! Id: {playerNetId}", this);
-
             RpcRemovePlayerScoreElement(playerNetId);
         }
         
@@ -58,8 +56,6 @@ namespace Game.Scripts.UI
         [ClientRpc]
         private void RpcUpdatePlayersList(List<PlayerController> players)
         {
-            Debug.Log($"RpcUpdatePlayersList! Name: {players.Count}", this);
-
             foreach (var player in players)
             {
                 // Update already enabled if such exist
@@ -91,8 +87,6 @@ namespace Game.Scripts.UI
         [ClientRpc]
         private void RpcRemovePlayerScoreElement(uint playerNetId)
         {
-            Debug.Log($"RpcRemovePlayerScoreElement! NetId: {playerNetId}, Contains: {_registeredPlayerControllers.ContainsKey(playerNetId)}", this);
-
             RemovePlayerScoreElement(playerNetId);
         }
         
@@ -109,6 +103,8 @@ namespace Game.Scripts.UI
         public override void OnStopClient()
         {
             base.OnStopClient();
+            
+            _roundResultElement.gameObject.SetActive(false);
             
             // Bugfix: prevents duplication of player score elements if client disconnects and connects again.
             // Could be more optimized

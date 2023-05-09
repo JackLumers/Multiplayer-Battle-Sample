@@ -50,13 +50,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 87b3446fb6b4b78448c12de98ee1eaa9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  syncDirection: 0
+  syncDirection: 1
   syncMode: 0
   syncInterval: 0
-  _invincibilityColor: {r: 1, g: 0.24056602, b: 0.24056602, a: 1}
-  _lookingDirection: {fileID: 3051582337795606051}
-  _characterModelTransform: {fileID: 3051582337915880588}
   _dummyPlayersDataConfig: {fileID: 11400000, guid: 2ef382426b6cff44cb61f30df09402f2, type: 2}
+  _modelLookingDirectionMark: {fileID: 3051582337795606051}
+  _characterModelTransform: {fileID: 3051582337915880588}
   _animator: {fileID: 3051582336983108831}
   _meshRenderer: {fileID: 3051582337915880626}
   _lookingDirectionMarkRenderer: {fileID: 3051582337795606050}
@@ -156,9 +155,9 @@ Animator:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3051582336983108816}
-  m_Enabled: 1
+  m_Enabled: 0
   m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 7a3648bc2b7c6d648ad8843dac364b82, type: 2}
   m_CullingMode: 0
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
@@ -267,7 +266,7 @@ GameObject:
   - component: {fileID: 3051582337915880626}
   m_Layer: 0
   m_Name: Model
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
