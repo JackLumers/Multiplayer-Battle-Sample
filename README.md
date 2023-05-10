@@ -35,6 +35,7 @@ Therer also colors array that is used to randomly set color to players.
 * DoTween: http://dotween.demigiant.com/
 * UniTask: https://github.com/Cysharp/UniTask
 * Input System: https://docs.unity3d.com/Packages/com.unity.inputsystem@1.5/manual/index.html
+* Cinemachine: https://docs.unity3d.com/Packages/com.unity.cinemachine@2.3/manual/index.html
 
 # Possible problems
 Not tested for cheating possibilities. Not tested for bad network, like high ping or packet loss.
