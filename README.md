@@ -1,6 +1,4 @@
 # Multiplayer Battle Sample
-Made by Ilyas Kharisov a.k.a. Jack Lumers.
-
 A sample game with local multiplayer. Getting myself knowing Mirror Networking.
 
 # Project Setup
